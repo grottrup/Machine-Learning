@@ -1,0 +1,36 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage{malmacros}
+
+\newcommand\mymaketitle[1]{
+   \rule{\textwidth}{1.6pt}\vspace*{-\baselineskip}\vspace*{2pt}
+   \rule{\textwidth}{0.4pt}
+   \\   
+   \huge \bf #1\\
+   \vspace{-8pt}
+   \rule{\textwidth}{0.4pt}\vspace*{-\baselineskip}\vspace{3.2pt}
+   \rule{\textwidth}{1.6pt}
+}
+
+\date{April 19, 2019}
+
+\begin{document}
+
+\title{
+	\mymaketitle{Machine Learning}
+}
+
+\maketitle
+
+\include{5-gradient-decent}
+\include{5-generalization-error}
+\include{5-cap}
+\include{6-bayes}
+\include{7-regulizers}
+\include{7-gridsearch}
+\include{8-compression}
+\include{9-neuron}
+\include{9-perceptron}
+\include{9-keras-mlp-moon}
+\include{9-mlp-mnist}
+\end{document}
+

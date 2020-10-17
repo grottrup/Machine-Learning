@@ -1,0 +1,150 @@
+\documentclass{article}
+\usepackage{malmacros}
+\begin{document}
+
+\section{Gradient Descent Methods and Training}
+
+\subsection{Qa The Gradient Descent Method (GD)}
+
+
+
+%\[ \nabla_\bw J(\b{w}) &= \frac{2}{m} \b{X^\top}\]
+
+This section will explain the gradient descent method and how the code snippet calculates the minimum by calculating a local gradient and thus finding a new theta. There will be generated random data and theta is also initialized to be random.
+
+\begin{pyminted}
+X_b, y = GenerateData()
+
+eta = 0.1 # learning rate
+n_iterations = 1000
+m = 100
+theta = np.random.randn(2,1)
+
+for iteration in range(n_iterations):
+    gradients = 2/m * X_b.T.dot(X_b.dot(theta) - y)
+    theta = theta - eta * gradients
+\end{pyminted}
+
+Theta is a vector with two values which becomes smaller over time accoring to the eta and gradients value.
+'gradients' is the gradient of a cost function that is calculated using MSE. The gradient represents the slope of the tangent of a point. When the slope reaches zero, a local minimum has been found.
+\\ \\
+The code will iterate 1000 times. A gradient is calculated for each iteration. A local gradient is calculated of the error function with regards to the theta parameter. It will keep lowering this value until it reaches a minimum, which it hopefully will before the 1000 iterations. The theta function will be initialized randomly and be improved gradually, each step to decrease the cost function. 
+\\ \\
+'eta' is the learning rate parameter: it determines how far there is between each gradient. If eta increases, the learning rate increases, and the difference between each gradient will be higher. This will result in reaching the minimum faster. Though, if this value is too high, the minimum might not be found because it will learn in too big steps and thus overshoot the minimum. If eta is too little, it will take very long for gradient descent to find the minimum. This is why it is important to use a proper learning rate.
+
+\subsection{Qb The Stochastic Gradient Descent Method (SGD)}
+
+In both gradient descent (GD) and stochastic gradient descent (SGD), 
+a set of parameters is updated, in an iterative manner to minimize an error function.
+The difference is in GD, all the samples in a training set, is iterated through, to do a single update,
+for a parameter. While in SGD, only one sample, or a single subset (in case of Mini-Batch SGD) of samples, 
+from the training set, is used to update a parameter, in a particular iteration.
+\\ \\
+Putting this in another way (as explained in the book p. 117). While Batch-GD uses the whole training set,
+to compute the gradient at every step, which makes it very slow in comparison, especially on big data sets.
+The SGD method picks a random instance at each step and calculates the gradients on that single instance.
+That is what makes it alot faster and makes it able to run "out-of-core algorithms" as only one instance,
+needs to be in memory at a given time. To further elaborate on this difference, we can refere to the outer loop of epochs.
+Where in batch-GD we just go through all the instances in the training set 
+(though of course its usualy limited by n\_iterations). In SGD a max number of outer iterations is set,
+called "epochs". And then a random instance is picked and calculated on each step.
+So instead of 1000 iterations as before there is now only 50 iterations called epochs.
+This random picking is done with the use of the "np.random.randint" method from numpy.
+Its inner workings is explained in detail in the code comments.
+\\ \\
+Lastly is to explain the learning schedule. This is so that we can "decrease" the learning rate,
+on each epoch iteration. This is to accomodate for the fact that the SGD never settles.
+But by dividing t0=5 with a variating but ever increasing value, we can slowly decrease the learning rate,
+and then "freeze" the bouncing at some point.
+
+
+\begin{pyminted}
+theta_path_sgd = []
+m = len(X_b)
+np.random.seed(42)
+
+n_epochs = 50
+t0, t1 = 5, 50  # learning schedule hyperparameters
+
+def learning_schedule(t):
+    return t0 / (t + t1)
+
+# random initialization. This is to fill the "theta" vector with random values.
+theta = np.random.randn(2,1)  
+
+for epoch in range(n_epochs):
+    for i in range(m):
+        if epoch == 0 and i < 20:
+            y_predict = X_new_b.dot(theta) 
+            style = "b-" if i > 0 else "r--"
+            plt.plot(X_new, y_predict, style)
+        
+        # Returns a random interger from 0 to m. This is the part of the SGD method,
+        # where a random instace is picked on each step, to calculate the gradients,
+        # based on the single current instance. This is what makes it "jump around".
+        random_index = np.random.randint(m) 
+        xi = X_b[random_index:random_index+1]
+        yi = y[random_index:random_index+1]
+
+        # The formula for calculating the gradient vector of the cost function.
+        # Refering to the formula found on p. 115.
+        gradients = 2 * xi.T.dot(xi.dot(theta) - yi)        
+        
+        # The new learning rate is set via the learning schedule.
+        # The value of epochs is ever increasing while, the value of m is variating.
+        eta = learning_schedule(epoch * m + i)
+        theta = theta - eta * gradients
+        theta_path_sgd.append(theta)                 
+
+        plt.plot(X, y, "b.")  
+\end{pyminted}
+
+\subsection{Qd Mini-batch Gradient Descent Method}
+Mini-batch Gradient Descent gradually tweaks the parameters for each iteration like the other Gradient Descent methods.
+For each step in Mini-batch GD the gradients are calculated fir just one instance, similar to Stochastic GD. When looking at the implementation below it is seemingly more similar to Stochastic GD. It does however also is similarities with Batch Gradient Descent. Batch GD is slow at large data set due to it uses all of the training data at every step. Mini-batch has another approach where it first splits the batch into several mini-batches. In this implementation the mini-batch size is 20, which describes the amount of samples taken from the data set. This is used for shuffling the data set and picking new samples of that size. This differs from Stochastic GD because contrary it only use one sample at a time.
+
+\begin{pyminted}
+theta_path_mgd = []
+
+n_iterations = 50
+minibatch_size = 20
+
+np.random.seed(42)
+theta = np.random.randn(2,1)  # random initialization
+
+t0, t1 = 200, 1000
+def learning_schedule(t):
+    return t0 / (t + t1)
+
+t = 0
+for epoch in range(n_iterations):
+    shuffled_indices = np.random.permutation(m)
+    X_b_shuffled = X_b[shuffled_indices]
+    y_shuffled = y[shuffled_indices]
+    for i in range(0, m, minibatch_size):
+        t += 1
+        xi = X_b_shuffled[i:i+minibatch_size]
+        yi = y_shuffled[i:i+minibatch_size]
+        
+        gradients = 2/minibatch_size * xi.T.dot(xi.dot(theta) - yi)
+        eta = learning_schedule(t)
+        theta = theta - eta * gradients
+        theta_path_mgd.append(theta)
+
+print(f'mini-batch theta={theta.ravel()}')
+\end{pyminted}
+
+
+
+\subsection{Qe Choosing a Gradient Descent Method}
+
+The gradient descent method has different cons and pros, and various ways to be implemented.
+\\ \\
+The \textbf{normal equation}, which is basically using Scikit-Learns LinearRegression, is fairly fast, but will become slower when the amount of features increases. If the number of training instances is changed, it will not have an effect on the speed of the algorithm. It is guaranteed to reach a global minimum, since the MSE cost function for a Linear Regression is a convex function, meaning there will be only one minimum. This means it will be guaranteed to reach a global minimumu if you wait long enough.
+\\ \\
+\textbf{Gradient batch} is fairly slow with a large amount of instances, because the amount of calculations for every partial derivative will increase. It uses the whole batch of training with every gradient descent step as well, which makes it very slow with very large training sets. However, the number of features can increase but the batch GD will still be fast.
+\\ \\
+\textbf{Stochastic GD} is both fast with a high number of features and a high number of instances, since it will not use the whole training set to compute a gradient step. Instead, it will pick a random instance and compute the gradients based on this instance alone. This makes it possible to train on very large data sets. Stochastic GD can easily be implemented with Scikit-Learns SGDRegressor.
+\\ \\
+\textbf{Mini-batch GD} is also fast with a large number of instances and a high number of features. This method is an in-between the previous methods. It will not compute the gradients based on the full training set, nor a single instance as Stochastic GD, but instead compute the gradients on a small random set of instances (mini-batches). There is a main advantage over Stochastic GD. It will have a performance boost regarding hardware, especially when using GPU's. Also, mini-batch GD will walk closer to the global minimum than Stochastic GD, but it may have a harder time escaping a local minimum. 
+\end{document}

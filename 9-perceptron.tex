@@ -1,0 +1,93 @@
+\documentclass{article}
+\usepackage{malmacros}
+\begin{document}
+
+\section{The Perceptron}
+
+\subsection{Qa Using a Perceptron on the Moon-data}
+\begin{pyminted}
+from sklearn.linear_model import Perceptron, SGDClassifier
+from sklearn.model_selection import train_test_split
+
+from libitmal import dataloaders_v3 as itmaldataloaders
+
+X, y = itmaldataloaders.MOON_GetDataSet(n_samples=1000)
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
+
+model = Perceptron() # using default parameters
+model.fit(X_train, y_train)
+model.score(X_test, y_test)
+\end{pyminted}
+\begin{pyconsole}
+0.8533333333333334
+\end{pyconsole}
+\subsection{Qb Plot the Decision Boundary}
+\begin{pyminted}
+%matplotlib inline
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Helper function to plot a decision boundary.
+def plot_decision_boundary(pred_func):
+    # Set min and max values and give it some padding
+    x_min, x_max = X[:, 0].min() - .5, X[:, 0].max() + .5
+    y_min, y_max = X[:, 1].min() - .5, X[:, 1].max() + .5
+    h = 0.01
+    # Generate a grid of points with distance h between them
+    xx, yy = np.meshgrid(np.arange(x_min, x_max, h), np.arange(y_min, y_max, h))
+    # Predict the function value for the whole gid
+    Z = pred_func(np.c_[xx.ravel(), yy.ravel()])
+    Z = Z.reshape(xx.shape)
+    # Plot the contour and training examples
+    plt.contourf(xx, yy, Z, cmap=plt.cm.Spectral,alpha=.8)
+    plt.scatter(X[:, 0], X[:, 1], c=y, cmap=plt.cm.Spectral, alpha=.5)
+
+# Predict and plot decision boundary
+plot_decision_boundary(lambda x: model.predict(x))
+plt.title("Decision Boundary")
+plt.show()
+\end{pyminted}
+\dsdfig{les9-decision-boundary}{13cm}{MOON dataset with a linear boundary found by the Perceptron model.}{H}
+
+\subsection{Qc The Perceptron on an XOR-problem} % kinda done.. could be better
+
+A single neuron or perceptron cannot be used to solve the XOR-problem. This is also true for any other linear classification model. To achieve this multilayered perceptrons are required.
+A single layer of perceptrons are incapable of learning complex patterns. It behaves similarly to Logistic Regression classifiers in that the decision boundary of each perceptron is linear.
+Solving the XOR-problem would give a more optimal decision boundary for the MOON dataset, since the MOON dataset cannot be optimally categorized with just a linear boundary.
+
+\subsection{Qd Compare the Perceptron to the SGD}
+
+Perceptrons in Scikit-Learn are equavalent to Stochastic Gradient Descent using certain hyperparameters.
+
+\begin{pyminted}
+import numpy as np
+from sklearn.datasets import make_moons
+from sklearn.linear_model import Perceptron, SGDClassifier
+from sklearn.model_selection import train_test_split
+
+X, y = make_moons()
+X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=42)
+
+per_clf = Perceptron(random_state=42, tol=1e-3)
+per_clf.fit(X_train, y_train)
+
+sgd_clf = SGDClassifier(random_state=42, tol=1e-3)
+sgd_clf.fit(X_train, y_train)
+
+sgd_per_clf = SGDClassifier(random_state=42, tol=1e-3, loss='perceptron', learning_rate='constant', eta0=1, penalty=None)
+sgd_per_clf.fit(X_train, y_train)
+
+print("Default Perceptron score: ", per_clf.score(X_test, y_test))
+print("Default SGD score: ", sgd_clf.score(X_test, y_test))
+print("SGD with Perceptron hyperparameters score: ", sgd_per_clf.score(X_test, y_test))
+\end{pyminted}
+\begin{pyconsole}
+Default Perceptron score:  0.72
+Default SGD score:  0.76
+SGD with Perceptron hyperparameters score:  0.72
+\end{pyconsole}
+
+The resulting scores are the same for the default Perceptron and the SGD with Perceptron hyperparameters.
+
+\end{document}
